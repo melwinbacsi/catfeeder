@@ -1,13 +1,10 @@
-package services;
+/*package services;
 
-import gui.Menu;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Properties;
 
 public class ClientService implements Runnable {
@@ -47,7 +44,7 @@ public class ClientService implements Runnable {
                 dos.write(0);
             }
 
-            if (MotionDetector.isMdStop()) {
+            if (MotionDetector.isMotionDetectorStopped()) {
                 dos.write(0);
             } else {
                 dos.write(1);
@@ -71,7 +68,7 @@ public class ClientService implements Runnable {
             }
             if (menuOrder.equals("stop")) {
                 PirSensor.setPirStop(true);
-                MotionDetector.setMdStop(true);
+                MotionDetector.setMotionDetectorStopped(true);
             }
             if (menuOrder.equals("set weight")) {
                 aw = LoadCell.getWeight();
@@ -88,7 +85,7 @@ public class ClientService implements Runnable {
 
             }
             if (menuOrder.equals("screen")) {
-                ImageIO.write(MotionDetector.getPic(), "jpg", new File("/home/pi/apache-tomcat-8.5.34/webapps/WebClient/screen.jpg"));
+                ImageIO.write(MotionDetector.getPicture(), "jpg", new File("/home/pi/apache-tomcat-8.5.34/webapps/WebClient/screen.jpg"));
             }
             if (menuOrder.equals("actual weight")) {
             }
@@ -100,7 +97,7 @@ public class ClientService implements Runnable {
             aw = LoadCell.getWeight();
 
 
-            if (MotionDetector.isMdStop()) {
+            if (MotionDetector.isMotionDetectorStopped()) {
                 dos.write(0);
             } else {
                 dos.write(1);
@@ -128,3 +125,4 @@ public class ClientService implements Runnable {
         return props.getProperty("password");
     }
 }
+*/

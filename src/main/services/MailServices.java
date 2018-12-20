@@ -6,6 +6,8 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.internet.*;
 
+import db.DB;
+import db.Measurement;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.properties.EncryptableProperties;
 
@@ -15,13 +17,13 @@ public class MailServices {
     public MailServices() {
     }
 
-    public void mailSend(String path) {
+    public void sendMail(String path, Measurement measurement, Measurement previousMeasurement) {
         String to = "314malna@gmail.com";
         String from = "314malna@gmail.com";
         String subject = "event detected";
-        int lw = 0;
-        int aw = 0;
-        int ow = 0;
+        int lastWeight = 0;
+        int actualWeight = 0;
+        int origoWeight = 0;
 
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
         encryptor.setPassword("mkjashdgf");
@@ -43,11 +45,11 @@ public class MailServices {
             Multipart multipart = new javax.mail.internet.MimeMultipart();
 
             MimeBodyPart textBodyPart = new MimeBodyPart();
-            aw = LoadCell.getWeight();
-            lw = WeightStore.readActualWeight();
-            ow = WeightStore.readOrigoWeight();
+            actualWeight = LoadCell.getWeight();
+            lastWeight = previousMeasurement.getActualWeight();
+            origoWeight = measurement.getOrigoWeight();
 
-            textBodyPart.setText("Legutóbb "+(lw-aw)+"g táp fogyott.\nAz előző etetés óta összesen "+(ow-aw)+ " g tápot ettek.");
+            textBodyPart.setText("Legutóbb " + (lastWeight - actualWeight) + "g táp fogyott.\nAz előző etetés óta összesen " + (origoWeight - actualWeight) + " g tápot ettek.");
 
             MimeBodyPart attachmentBodyPart = new MimeBodyPart();
             javax.activation.DataSource source = new javax.activation.FileDataSource(path);
@@ -73,18 +75,6 @@ public class MailServices {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        try {
-            WeightStore.setLastWeight(lw);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            WeightStore.setActualWeight(aw);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
     }
 
     public void createPropFile(char[] pass) {

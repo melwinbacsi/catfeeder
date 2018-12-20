@@ -4,27 +4,20 @@ import db.DB;
 import db.Measurement;
 import org.bytedeco.javacv.*;
 
-import javax.imageio.ImageIO;
-
 import static org.bytedeco.javacpp.opencv_core.*;
 import static org.bytedeco.javacpp.opencv_imgproc.*;
-import static org.bytedeco.javacpp.opencv_imgcodecs.*;
 import static org.bytedeco.javacpp.opencv_imgproc.findContours;
 
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.io.*;
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.TimerTask;
 
 public class MotionDetector
         implements Runnable {
 
-    private static boolean mdStop = false;
-    private static BufferedImage pic;
+    private static boolean motionDetectorStopped = false;
+    private static BufferedImage picture;
     private static BufferedImage capturedPic = null;
     DB db;
 
@@ -36,33 +29,35 @@ public class MotionDetector
         MotionDetector.capturedPic = capturedPic;
     }
 
-    static BufferedImage getPic() {
-        return pic;
+    static BufferedImage getPicture() {
+        return picture;
     }
 
-    public static void setPic(BufferedImage pic) {
-        MotionDetector.pic = pic;
+    public static void setPicture(BufferedImage picture) {
+        MotionDetector.picture = picture;
     }
 
-    public static boolean isMdStop() {
-        return mdStop;
+    public static boolean isMotionDetectorStopped() {
+        return motionDetectorStopped;
     }
 
-    public static void setMdStop(boolean mdStop) {
-        MotionDetector.mdStop = mdStop;
+    public static void setMotionDetectorStopped(boolean motionDetectorStopped) {
+        MotionDetector.motionDetectorStopped = motionDetectorStopped;
     }
-    public MotionDetector(DB db){
-        this.db=db;
+
+    public MotionDetector(DB db) {
+        this.db = db;
     }
+
     public void run() {
         try {
-            motionDetect();
+            detectMotion();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void motionDetect() throws Exception {
+    public void detectMotion() throws Exception {
         long time = 0;
 
         OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(-1);
@@ -70,47 +65,41 @@ public class MotionDetector
         OpenCVFrameConverter.ToMat converter = new OpenCVFrameConverter.ToMat();
         Mat frame = converter.convert(grabber.grab());
         Mat image = null;
-        Mat prevImage = null;
-        Mat diff = null;
+        Mat previousImage = null;
+        Mat difference = null;
         MatVector contour = new MatVector();
         int detectionCounter = 0;
         boolean captured = false;
-        BufferedImage cachePic = null;
-
-        // CanvasFrame canvasFrame = new CanvasFrame("Some Title");
-        // canvasFrame.setCanvasSize(frame.rows(), frame.cols());
-
-        while (!isMdStop()) {
-            setPic(new Java2DFrameConverter().getBufferedImage(grabber.grab()));
+        BufferedImage cachedPicture = null;
+        while (!isMotionDetectorStopped()) {
+            setPicture(new Java2DFrameConverter().getBufferedImage(grabber.grab()));
             GaussianBlur(frame, frame, new Size(3, 3), 0);
             if (image == null) {
                 image = new Mat(frame.rows(), frame.cols(), CV_8UC1);
                 cvtColor(frame, image, CV_BGR2GRAY);
             } else {
-                prevImage = image;
+                previousImage = image;
                 image = new Mat(frame.rows(), frame.cols(), CV_8UC1);
                 cvtColor(frame, image, CV_BGR2GRAY);
             }
-            if (diff == null) {
-                diff = new Mat(frame.rows(), frame.cols(), CV_8UC1);
+            if (difference == null) {
+                difference = new Mat(frame.rows(), frame.cols(), CV_8UC1);
             }
-            if (prevImage != null) {
+            if (previousImage != null) {
                 if ((System.currentTimeMillis() / 1000) - time > 60 && System.currentTimeMillis() / 1000 - time < 100 && captured) {
-                    Still s = new Still(getCapturedPic());
                     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-                    Measurement measurement = new Measurement(LocalTime.now().format(dtf), db.getOrigoTime(), LoadCell.getWeight(), db.getOrigoWeight());
+                    Measurement measurement = new Measurement(LocalTime.now().format(dtf), db.getMeasurement(-1).getOrigoTime(), LoadCell.getWeight(), db.getMeasurement(-1).getOrigoWeight());
                     db.addMeasurement(measurement);
+                    measurement = db.getMeasurement(-1);
+                    PictureSaver pictureSaver = new PictureSaver(getCapturedPic(), measurement);
                     captured = false;
-                    cachePic = null;
+                    cachedPicture = null;
                     PirSensor.setPirDetected(false);
                 }
 
-                absdiff(image, prevImage, diff);
-                threshold(diff, diff, 45, 255, CV_THRESH_BINARY);
-
-                // canvasFrame.showImage(converter.convert(diff));
-
-                findContours(diff, contour, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+                absdiff(image, previousImage, difference);
+                threshold(difference, difference, 45, 255, CV_THRESH_BINARY);
+                findContours(difference, contour, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
                 if (contour.size() > 0 && (System.currentTimeMillis() / 1000) - time > 7) {
                     if ((System.currentTimeMillis() / 1000) - time < 15 && PirSensor.isPirDetected()) {
                         detectionCounter++;
@@ -119,11 +108,11 @@ public class MotionDetector
                     }
                     time = System.currentTimeMillis() / 1000;
                     if (detectionCounter >= 3) {
-                        if (cachePic == null) {
-                            cachePic = getPic();
+                        if (cachedPicture == null) {
+                            cachedPicture = getPicture();
                         }
-                        setCapturedPic(cachePic);
-                        cachePic = getPic();
+                        setCapturedPic(cachedPicture);
+                        cachedPicture = getPicture();
                         captured = true;
                     }
                 }

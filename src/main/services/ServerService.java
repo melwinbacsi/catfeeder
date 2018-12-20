@@ -1,4 +1,4 @@
-package services;
+/*package services;
 
 import gui.Menu;
 
@@ -26,3 +26,4 @@ public class ServerService implements Runnable {
         }
     }
 }
+*/

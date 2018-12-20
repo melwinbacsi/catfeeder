@@ -4,7 +4,6 @@ import db.DB;
 import db.Measurement;
 import services.*;
 
-import java.io.IOException;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -16,14 +15,14 @@ public class Menu {
         MailServices ms = new MailServices();
         Thread ps = new Thread(new PirSensor());
         ps.start();
-        Thread ss = new Thread(new ServerService());
-        ss.start();
+        // Thread ss = new Thread(new ServerService());
+        // ss.start();
         Thread md = new Thread(new MotionDetector(db));
         md.start();
         Thread lc = new Thread(new LoadCell());
         lc.start();
-        int sw = 0;
-        int aw = 0;
+        int origoWeight = 0;
+        int actualWeight = 0;
         while (true) {
             System.out.println("\np - set new password\nc - check password\nw - set weight\nr - read weight\ne - exit");
             char r = scanner.next().charAt(0);
@@ -39,40 +38,32 @@ public class Menu {
                         break;
                     }
                     case 't': {
-                        new Still();
+                        Measurement measurement = db.getMeasurement(-1);
+                        if(measurement==null){
+                            actualWeight = LoadCell.getWeight();
+                            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+                            String time = LocalTime.now().format(dtf);
+                            measurement = new Measurement(time, time, actualWeight, actualWeight);
+                            db.addMeasurement(measurement);
+                        }
+                        new PictureSaver(measurement);
                         break;
                     }
                     case 'w': {
-                        aw = LoadCell.getWeight();
-                        try {
-                            WeightStore.setOrigoWeight(aw);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        try {
-                            WeightStore.setActualWeight(aw);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        actualWeight = LoadCell.getWeight();
                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
                         String time = LocalTime.now().format(dtf);
-                        int weight = LoadCell.getWeight();
-                        Measurement measurement = new Measurement(time, time, weight, weight);
+                        Measurement measurement = new Measurement(time, time, actualWeight, actualWeight);
                         db.addMeasurement(measurement);
                         break;
                     }
                     case 'r': {
-
-                        try {
-                            sw = WeightStore.readOrigoWeight();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        aw = LoadCell.getWeight();
-                        System.out.println("A kezdő súly: " + sw + "g");
-                        System.out.println("Az aktuális súly: " + aw + "g");
-                        System.out.println("Teljes fogyás: " + (sw - aw) + "g");
-                        System.out.println("DB-ből: "+db.getOrigoWeight());
+                        Measurement measurement = db.getMeasurement(-1);
+                        origoWeight = measurement.getOrigoWeight();
+                        actualWeight = LoadCell.getWeight();
+                        System.out.println("A kezdő súly: " + origoWeight + "g");
+                        System.out.println("Az aktuális súly: " + actualWeight + "g");
+                        System.out.println("Teljes fogyás: " + (origoWeight - actualWeight) + "g");
                         break;
                     }
                     case 'e': {
@@ -83,8 +74,8 @@ public class Menu {
                             } catch (InterruptedException e) {
                             }
                         }
-                        if (!MotionDetector.isMdStop()) {
-                            MotionDetector.setMdStop(true);
+                        if (!MotionDetector.isMotionDetectorStopped()) {
+                            MotionDetector.setMotionDetectorStopped(true);
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e) {

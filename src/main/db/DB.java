@@ -1,5 +1,7 @@
 package db;
 
+import org.bytedeco.javacpp.presets.opencv_core;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -7,7 +9,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 
 public class DB {
     final String URL = "jdbc:derby:measurementDB;create=true";
@@ -16,6 +17,7 @@ public class DB {
     Connection conn;
     Statement createStatement;
     DatabaseMetaData dbmd;
+    ResultSet rs;
 
     public DB() {
 
@@ -51,7 +53,7 @@ public class DB {
         try {
             String sql = "insert into measurements (meastime, origotime, actualweight, origoweight) values (?, ?, ?, ?)";
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
-            preparedStatement.setString(1, measurement.getMeasTime());
+            preparedStatement.setString(1, measurement.getMeasurementTime());
             preparedStatement.setString(2, measurement.getOrigoTime());
             preparedStatement.setInt(2, measurement.getActualWeight());
             preparedStatement.setInt(3, measurement.getOrigoWeight());
@@ -61,29 +63,23 @@ public class DB {
         }
     }
 
-    public int getOrigoWeight() {
-        int origoWeight = 0;
-        String sql = "select origoweight from measurements order by meastime desc limit 1";
-        try {
-            ResultSet rs = createStatement.executeQuery(sql);
-            if(!rs.first()){
-            origoWeight = rs.getInt("origoweight");}
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public Measurement getMeasurement(int id) {
+        Measurement measurement = null;
+        String sql = "select * from measurements where id = ?";
+        if (id == -1) {
+            sql = "select origoweight from measurements order by meastime desc limit 1";
+        } else {
+            try {
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                preparedStatement.setInt(1, id);
+                rs = createStatement.executeQuery(sql);
+                if (!rs.next()) {
+                    measurement = new Measurement(rs.getInt("id"),rs.getString("meastime"), rs.getString("origotime"), rs.getInt("actualweight"), rs.getInt("origoweight"));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-        return origoWeight;
-    }
-
-    public String getOrigoTime() {
-        String origoTime = "";
-        String sql = "select origotime from measurements order by meastime desc limit 1";
-        try {
-            ResultSet rs = createStatement.executeQuery(sql);
-            if(!rs.first()){
-            origoTime = rs.getString("origotime");}
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return origoTime;
+        return measurement;
     }
 }
