@@ -13,14 +13,14 @@ public class PictureSaver {
     private String measurementTime;
 
     public PictureSaver(Measurement measurement) {
-        this(MotionDetector.getPicture(), measurement);
+        this(MotionDetector.getPicture(), measurement, true);
     }
 
-    public PictureSaver(BufferedImage picture, Measurement measurement) {
+    public PictureSaver(BufferedImage picture, Measurement measurement, boolean testMailSend) {
         try {
-            DB db = new DB();
-            Measurement previousMeasurement = db.getMeasurement(measurement.getId()-1);
-            if (LoadCell.getWeight() < (db.getMeasurement(-1).getActualWeight() - 1)) {
+            Measurement previousMeasurement = DB.getMeasurement(measurement.getId()-1);
+            if (LoadCell.getWeight() < (DB.getMeasurement(-1).getActualWeight() - 1) || testMailSend) {
+                DB.addMeasurement(measurement);
                 measurementTime = measurement.getMeasurementTime();
                 path = "/home/pi/camera/" + measurementTime.substring(0, 5) + "/" + measurementTime.substring(6) + ".jpg";
                 File directory = new File("/home/pi/camera/" + measurementTime.substring(0, 5));

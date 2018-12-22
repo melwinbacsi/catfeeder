@@ -7,14 +7,16 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../activation.jar!/" />
+          <root url="jar://$MODULE_DIR$/../derby.jar!/" />
           <root url="jar://$MODULE_DIR$/../jasypt-1.9.2.jar!/" />
           <root url="jar://$MODULE_DIR$/../javacpp.jar!/" />
           <root url="jar://$MODULE_DIR$/../javacv.jar!/" />
           <root url="jar://$MODULE_DIR$/../javax.mail-1.4.4.jar!/" />
+          <root url="jar://$MODULE_DIR$/../junit.jar!/" />
           <root url="jar://$MODULE_DIR$/../opencv-linux-armhf.jar!/" />
           <root url="jar://$MODULE_DIR$/../opencv.jar!/" />
           <root url="jar://$MODULE_DIR$/../pi4j-core-sources.jar!/" />

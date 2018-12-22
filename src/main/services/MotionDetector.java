@@ -10,7 +10,7 @@ import static org.bytedeco.javacpp.opencv_imgproc.findContours;
 
 
 import java.awt.image.BufferedImage;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class MotionDetector
@@ -19,7 +19,6 @@ public class MotionDetector
     private static boolean motionDetectorStopped = false;
     private static BufferedImage picture;
     private static BufferedImage capturedPic = null;
-    DB db;
 
     static BufferedImage getCapturedPic() {
         return capturedPic;
@@ -43,10 +42,6 @@ public class MotionDetector
 
     public static void setMotionDetectorStopped(boolean motionDetectorStopped) {
         MotionDetector.motionDetectorStopped = motionDetectorStopped;
-    }
-
-    public MotionDetector(DB db) {
-        this.db = db;
     }
 
     public void run() {
@@ -87,11 +82,10 @@ public class MotionDetector
             }
             if (previousImage != null) {
                 if ((System.currentTimeMillis() / 1000) - time > 60 && System.currentTimeMillis() / 1000 - time < 100 && captured) {
+                    System.out.println("alarm");
                     DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-                    Measurement measurement = new Measurement(LocalTime.now().format(dtf), db.getMeasurement(-1).getOrigoTime(), LoadCell.getWeight(), db.getMeasurement(-1).getOrigoWeight());
-                    db.addMeasurement(measurement);
-                    measurement = db.getMeasurement(-1);
-                    PictureSaver pictureSaver = new PictureSaver(getCapturedPic(), measurement);
+                    Measurement measurement = new Measurement(LocalDateTime.now().format(dtf), DB.getMeasurement(-1).getOrigoTime(), LoadCell.getWeight(), DB.getMeasurement(-1).getOrigoWeight());
+                    new PictureSaver(getCapturedPic(), measurement, false);
                     captured = false;
                     cachedPicture = null;
                     PirSensor.setPirDetected(false);
