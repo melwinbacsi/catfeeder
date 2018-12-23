@@ -8,22 +8,24 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-public class PictureSaver {
+public class PictureSaver implements Runnable {
     private String path;
     private String measurementTime;
+    private Measurement measurement;
+    private Measurement previousMeasurement;
+    private BufferedImage picture;
+    private boolean testMailSend;
 
-    public PictureSaver(Measurement measurement) {
-        this(MotionDetector.getPicture(), measurement, true);
-    }
-
-    public PictureSaver(BufferedImage picture, Measurement measurement, boolean testMailSend) {
+    @Override
+    public void run() {
         try {
-            Measurement previousMeasurement = DB.getMeasurement(measurement.getId()-1);
-            if (LoadCell.getWeight() < (DB.getMeasurement(-1).getActualWeight() - 1) || testMailSend) {
-                DB.addMeasurement(measurement);
+            if ((measurement.getActualWeight() < (previousMeasurement.getActualWeight() - 1)) || testMailSend) {
+                if (!testMailSend) {
+                    DB.addMeasurement(measurement);
+                }
                 measurementTime = measurement.getMeasurementTime();
-                path = "/home/pi/camera/" + measurementTime.substring(0, 5) + "/" + measurementTime.substring(6) + ".jpg";
-                File directory = new File("/home/pi/camera/" + measurementTime.substring(0, 5));
+                path = "/home/pi/camera/" + measurementTime.substring(0, 8) + "/" + measurementTime.substring(9) + ".jpg";
+                File directory = new File("/home/pi/camera/" + measurementTime.substring(0, 8));
                 if (!directory.exists()) {
                     directory.mkdirs();
                 }
@@ -33,5 +35,17 @@ public class PictureSaver {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    public PictureSaver(Measurement measurement) {
+        this(MotionDetector.getPicture(), measurement, measurement, true);
+    }
+
+    public PictureSaver(BufferedImage picture, Measurement measurement, Measurement previousMeasurement, boolean testMailSend) {
+        this.picture = picture;
+        this.measurement = measurement;
+        this.testMailSend = testMailSend;
+        this.previousMeasurement = previousMeasurement;
     }
 }

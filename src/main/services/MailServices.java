@@ -24,7 +24,6 @@ public class MailServices {
         int lastWeight = 0;
         int actualWeight = 0;
         int origoWeight = 0;
-
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
         encryptor.setPassword("mkjashdgf");
         Properties props = new EncryptableProperties(encryptor);

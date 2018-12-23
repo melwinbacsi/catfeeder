@@ -46,7 +46,8 @@ public class Menu {
                         if(measurement==null){
                             addNewMeasurement();
                         }
-                        new PictureSaver(measurement);
+                        Thread pst = new Thread(new PictureSaver(measurement));
+                        pst.start();
                         break;
                     }
                     case 'w': {
